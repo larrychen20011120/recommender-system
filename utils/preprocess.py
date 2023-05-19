@@ -3,95 +3,59 @@ from collections import Counter
 import argparse
 import pickle
 
-def movielens_process(dir):
+def create_new_usermap(useless_users, user_num):
+    useless_users = list(sorted(useless_users))
+    new_usermap = [user for user in range(user_num+1)]
+    for useless_user in useless_users:
+        for idx in range(useless_user, user_num+1):
+            new_usermap[idx] -= 1
+    print(f"Create the map! Totally {max(new_usermap)} users")
+    return new_usermap
+
+def general_process(dir, filename):
     # process the user whose number of interactions < 3
-    user_list, movie_list, score_list = [], [], []
-    with open(os.path.join(dir, "user_movie.dat"), "r") as f:
+    user_list, item_list, score_list = [], [], []
+    with open(os.path.join(dir, filename), "r") as f:
         for line in f.readlines():
             line = line.rstrip().split("\t")
-            user, movie, score = int(line[0]), int(line[1]), int(line[2])
+            user, item, score = int(line[0]), int(line[1]), int(line[2])
             user_list.append(user)
-            movie_list.append(movie)
+            item_list.append(item)
             score_list.append(score)
     user_count_dict = dict( Counter(user_list) )
     useless_users = list(filter(
         lambda (user, cnt): cnt < 3, user_count_dict.items()
     ))
+    user_num = max(user_list) - len(useless_users)
+    new_usermap = create_new_usermap(useless_users, user_num)
     print(f"Those users' number of interactions less than 3: {useless_users}")
     filter_interaction = {
-        "remain_user_number": max(user_list) - len(useless_users),
-        "useless_users": useless_users,
+        "remain_user_number": user_num,
+        "remain_item_number": max(item_list),
+        "new_usermap": new_usermap,
         "score": []
     }
-    for user, movie, score in zip(user_list, movie_list, score_list):
+    for user, item, score in zip(user_list, item_list, score_list):
         if user not in useless_users:
             filter_interaction["score"].append(
-                (user, movie, score)
+                (user, item, score)
             )
     path = os.path.join(dir, "filter_interaction.pkl")
     print(f"Store the result to \"{filter_interaction}\"...")
     with open(path, "wb") as f:
         pickle.dump(filter_interaction, f)
+
+def movielens_process(dir):
+    filename = "user_movie.dat"
+    general_process(dir, filename)
 
 def yelp_process(dir):
-    # process the user whose number of interactions < 3
-    user_list, business_list, score_list = [], [], []
-    with open(os.path.join(dir, "user_business.dat"), "r") as f:
-        for line in f.readlines():
-            line = line.rstrip().split("\t")
-            user, business, score = int(line[0]), int(line[1]), int(line[2])
-            user_list.append(user)
-            business_list.append(business)
-            score_list.append(score)
-    user_count_dict = dict( Counter(user_list) )
-    useless_users = list(filter(
-        lambda (user, cnt): cnt < 3, user_count_dict.items()
-    ))
-    print(f"Those users' number of interactions less than 3: {useless_users}")
-    filter_interaction = {
-        "remain_user_number": max(user_list) - len(useless_users),
-        "useless_users": useless_users,
-        "score": []
-    }
-    for user, business, score in zip(user_list, business_list, score_list):
-        if user not in useless_users:
-            filter_interaction["score"].append(
-                (user, business, score)
-            )
-    path = os.path.join(dir, "filter_interaction.pkl")
-    print(f"Store the result to \"{filter_interaction}\"...")
-    with open(path, "wb") as f:
-        pickle.dump(filter_interaction, f)
+    filename = "user_business.dat"
+    general_process(dir, filename)
 
 def douban_process(dir):
-    # process the user whose number of interactions < 3
-    user_list, book_list, score_list = [], [], []
-    with open(os.path.join(dir, "user_book.dat"), "r") as f:
-        for line in f.readlines():
-            line = line.rstrip().split("\t")
-            user, book, score = int(line[0]), int(line[1]), int(line[2])
-            user_list.append(user)
-            book_list.append(book)
-            score_list.append(score)
-    user_count_dict = dict( Counter(user_list) )
-    useless_users = list(filter(
-        lambda (user, cnt): cnt < 3, user_count_dict.items()
-    ))
-    print(f"Those users' number of interactions less than 3: {useless_users}")
-    filter_interaction = {
-        "remain_user_number": max(user_list) - len(useless_users),
-        "useless_users": useless_users,
-        "score": []
-    }
-    for user, book, score in zip(user_list, book_list, score_list):
-        if user not in useless_users:
-            filter_interaction["score"].append(
-                (user, book, score)
-            )
-    path = os.path.join(dir, "filter_interaction.pkl")
-    print(f"Store the result to \"{filter_interaction}\"...")
-    with open(path, "wb") as f:
-        pickle.dump(filter_interaction, f)
+    filename = "user_book.dat"
+    general_process(dir, filename)
 
 
 if __name__ == "__main__":
